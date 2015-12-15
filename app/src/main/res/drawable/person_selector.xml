@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@mipmap/new_person_default" android:state_checkable="false" />
+    <item android:drawable="@mipmap/new_person_default" android:state_checkable="true" />
+    <item android:drawable="@mipmap/new_person_pressed" android:state_pressed="true" />
+</selector>
