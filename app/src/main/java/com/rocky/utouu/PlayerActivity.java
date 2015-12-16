@@ -12,6 +12,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +30,10 @@ public class PlayerActivity extends AppCompatActivity implements
     private boolean mIsVideoReadyToBePlayed = false;
     private SurfaceView surfaceView;
     private TextView play_back;
+    private SeekBar seekBar;
+    private ImageView iv_playorpause;
+    private int duration;
+    private boolean isPlaying = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,12 +52,37 @@ public class PlayerActivity extends AppCompatActivity implements
         }
         surfaceView = ((SurfaceView) findViewById(R.id.vedio_surfaceview));
         play_back = ((TextView) findViewById(R.id.play_back));
+        seekBar = ((SeekBar) findViewById(R.id.play_seekbar));
+        iv_playorpause = ((ImageView) findViewById(R.id.play_iv_playorpause));
         play_back.setOnClickListener(this);
+        iv_playorpause.setOnClickListener(this);
         holder = surfaceView.getHolder();
         holder.addCallback(this);
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        seekBar.setOnSeekBarChangeListener(change);
 
     }
+
+    //进度条改变的监听
+    private SeekBar.OnSeekBarChangeListener change = new SeekBar.OnSeekBarChangeListener() {
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            mMediaPlayer.seekTo(progress);
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar) {
+
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar) {
+            int progress = seekBar.getProgress();
+            if (mMediaPlayer != null && mMediaPlayer.isPlaying()) {
+                mMediaPlayer.seekTo(progress);
+            }
+        }
+    };
 
     @Override
     protected void onResume() {
@@ -151,6 +182,13 @@ public class PlayerActivity extends AppCompatActivity implements
             mMediaPlayer.setOnPreparedListener(this);
             mMediaPlayer.setOnVideoSizeChangedListener(this);
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mp, int what, int extra) {
+                    isPlaying = false;
+                    return false;
+                }
+            });
 
         } catch (Exception e) {
             Log.i("tag", "error: " + e.getMessage(), e);
@@ -165,9 +203,27 @@ public class PlayerActivity extends AppCompatActivity implements
     }
 
     private void startVideoPlayback() {
-        Log.v("tag", "-------->startVideoPlayback");
+        Log.v("tag", "-------->startVideoPlayback开始播放");
         holder.setFixedSize(mVideoWidth, mVideoHeight);
         mMediaPlayer.start();
+        iv_playorpause.setSelected(true);
+        mMediaPlayer.seekTo(0);
+        duration = mMediaPlayer.getDuration();
+        seekBar.setMax(duration);
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    isPlaying = true;
+                    while (isPlaying) {
+                        seekBar.setProgress(mMediaPlayer.getCurrentPosition());
+                        sleep(500);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
 
     }
 
@@ -185,6 +241,19 @@ public class PlayerActivity extends AppCompatActivity implements
             case R.id.play_back:
                 finish();
                 break;
+            case R.id.play_iv_playorpause:
+                if (isPlaying) {
+                    iv_playorpause.setSelected(false);
+                    mMediaPlayer.pause();
+                } else {
+                    iv_playorpause.setSelected(true);
+                    mMediaPlayer.start();
+                }
+                break;
         }
+    }
+
+    private void progressDialog()   {
+
     }
 }
